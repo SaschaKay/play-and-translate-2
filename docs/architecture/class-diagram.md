@@ -10,100 +10,67 @@ The architecture follows clean architecture principles with:
 - **Services**: Business logic layer
 - **Providers**: State management (Riverpod)
 
-## Full Class Diagram
+## Core Entities
 
 ```mermaid
 classDiagram
-    %% Core Word System
     class Word {
         +String id
-        +Map~String,String~ translations
-        +Map~String,String?~ audioUrls
-        +List~String~ tagIds
-        +String? creatorId
+        +Map translations
+        +Map audioUrls
+        +List tagIds
+        +String creatorId
         +WordVisibility visibility
-        +DateTime? deletedAt
+        +DateTime deletedAt
         +DateTime createdAt
         +DateTime updatedAt
-        +bool isSystemWord()
-        +bool isUserWord()
-        +bool isDeleted()
     }
 
-    class WordVisibility {
-        <<enumeration>>
-        public
-        private
-        unlisted
-    }
-
-    %% Tag System
     class Tag {
         +String id
         +String category
         +String value
-        +Map~String,String~ translations
-        +String? creatorId
-        +DateTime? deletedAt
+        +Map translations
+        +String creatorId
+        +DateTime deletedAt
         +DateTime createdAt
         +DateTime updatedAt
-        +String getDisplayName(language)
-        +bool isSystemTag()
     }
 
-    class TagCategories {
-        <<static>>
-        +String cefr
-        +String topic
-        +String wordType
-        +String custom
-    }
-
-    class Languages {
-        <<static>>
-        +String german
-        +String english
-        +String spanish
-        +List~String~ supported
-        +bool isValid(code)
-    }
-
-    %% Word Pack System
     class WordPack {
         +String id
-        +Map~String,String~ names
-        +Map~String,String?~ descriptions
-        +List~String~ includedTagIds
-        +List~String~ optionalTagIds
-        +List~String~ excludedTagIds
-        +List~String~ availablePlayLanguages
-        +List~String~ availableTranslationLanguages
-        +String? creatorId
+        +Map names
+        +List includedTagIds
+        +List optionalTagIds
+        +List excludedTagIds
+        +List availablePlayLanguages
+        +List availableTranslationLanguages
+        +String creatorId
         +bool isPublic
-        +DateTime? deletedAt
-        +DateTime createdAt
-        +DateTime updatedAt
-        +int? wordCount
+        +DateTime deletedAt
+        +int wordCount
     }
 
-    %% Game System
+    Word --> Tag : references via tagIds
+    WordPack --> Tag : filters via tagIds
+```
+
+## Game System
+
+```mermaid
+classDiagram
     class GameState {
         +String id
-        +List~String~ wordIds
+        +List wordIds
         +Grid grid
-        +Map~String,WordPlacement~ wordPlacements
+        +Map wordPlacements
         +String playLanguage
         +String translationLanguage
-        +List~String~ foundWordIds
+        +List foundWordIds
         +int hintsUsed
-        +DateTime? startTime
-        +Duration pausedDuration
+        +DateTime startTime
         +GameSettings settings
         +bool isCompleted
-        +DateTime createdAt
-        +DateTime lastPlayedAt
-        +bool isWordFound(wordId)
-        +void markWordFound(wordId)
     }
 
     class GameSettings {
@@ -119,15 +86,12 @@ classDiagram
         +Position start
         +int length
         +Direction direction
-        +List~Position~ getPositions()
     }
 
     class Grid {
         +List~List~String~~ cells
         +int rows
         +int cols
-        +String getLetterAt(row, col)
-        +bool isValidPosition(row, col)
     }
 
     class Position {
@@ -135,111 +99,99 @@ classDiagram
         +int col
     }
 
-    class GridSize {
-        <<enumeration>>
-        small_10x10
-        medium_15x15
-        large_20x20
-    }
+    GameState --> GameSettings
+    GameState --> Grid
+    GameState --> WordPlacement
+    WordPlacement --> Position
+    WordPlacement --> Direction
+    GameSettings --> GridSize
+```
 
-    class Direction {
-        <<enumeration>>
-        horizontal
-        vertical
-        diagonalDown
-        diagonalUp
-        horizontalReverse
-        verticalReverse
-        diagonalDownReverse
-        diagonalUpReverse
-    }
+## Learning System
 
-    %% Learning List System
+```mermaid
+classDiagram
     class LearningList {
         +String userId
-        +Map~String,LearningWord~ words
+        +Map words
         +String primaryLanguage
         +String translationLanguage
         +DateTime createdAt
         +DateTime updatedAt
-        +void addWord(wordId)
-        +void removeWord(wordId)
     }
 
     class LearningWord {
         +String wordId
         +DateTime addedAt
         +DateTime updatedAt
-        +DateTime? lastReviewedAt
-        +DateTime? deletedAt
+        +DateTime lastReviewedAt
+        +DateTime deletedAt
         +int timesReviewed
-        +String? personalNote
-        +DateTime? nextReviewDate
+        +String personalNote
         +int repetitionLevel
-        +void markReviewed()
     }
 
-    %% App Settings
-    class AppSettings {
-        +String uiLanguage
-        +String defaultPlayLanguage
-        +String defaultTranslationLanguage
-        +bool darkMode
-        +bool soundEffects
-        +bool showTranslationHints
-        +DateTime updatedAt
-    }
+    LearningList --> LearningWord : contains
+    LearningWord --> Word : references
+```
 
-    %% Service Layer (not stored, runtime only)
+## Service Layer
+
+```mermaid
+classDiagram
     class WordRepository {
         <<service>>
-        +Future~Word?~ getById(id)
-        +Future~List~Word~~ getByIds(ids)
-        +Future~List~Word~~ getByTagIds(tagIds)
-        +Future~void~ save(word)
+        +getById(id)
+        +getByIds(ids)
+        +getByTagIds(tagIds)
+        +save(word)
     }
 
     class LearningListService {
         <<service>>
-        +List~Word~ getWordsByTag(list, tagId)
-        +List~Word~ getWordsNeedingReview(list)
+        +getWordsByTag(list, tagId)
+        +getWordsNeedingReview(list)
     }
 
-    %% Relationships - Word System
-    Word --> WordVisibility : has
-    Word "0..*" --> "0..*" Tag : references via tagIds
-    Tag --> TagCategories : categorized by
-    Word --> Languages : uses codes
-    Tag --> Languages : uses codes
+    WordRepository --> Word : manages
+    LearningListService --> LearningList : operates on
+    LearningListService --> WordRepository : uses
+```
 
-    %% Relationships - Word Pack
-    WordPack "0..*" --> "0..*" Tag : filters via tagIds
-    WordPack --> Languages : uses codes
+## Enumerations
 
-    %% Relationships - Game
-    GameState "1" --> "*" Word : references via wordIds
-    GameState "1" --> "1" Grid : has
-    GameState "1" --> "*" WordPlacement : has
-    GameState "1" --> "1" GameSettings : configured by
-    WordPlacement --> Position : has start
-    WordPlacement --> Direction : has
-    GameSettings --> GridSize : uses
-    Grid "1" --> "*" Position : contains cells at
+### WordVisibility
+- `public` - visible to all, searchable
+- `private` - only visible to creator
+- `unlisted` - visible with direct link
 
-    %% Relationships - Learning List
-    LearningList "1" --> "*" LearningWord : contains
-    LearningWord --> Word : references via wordId
+### GridSize
+- `small_10x10` - 10x10 grid
+- `medium_15x15` - 15x15 grid
+- `large_20x20` - 20x20 grid
 
-    %% Relationships - Services
-    WordRepository ..> Word : manages
-    LearningListService ..> LearningList : operates on
-    LearningListService ..> Word : fetches
-    GameState ..> WordRepository : fetches words via
+### Direction
+- `horizontal` / `horizontalReverse`
+- `vertical` / `verticalReverse`
+- `diagonalDown` / `diagonalDownReverse`
+- `diagonalUp` / `diagonalUpReverse`
 
-    %% Cross-System Relationships
-    GameSettings --> WordPack : references via wordPackId
-    GameState --> AppSettings : respects defaults
-    GameState --> Languages : uses codes
+## Static Helper Classes
+
+### TagCategories
+```dart
+static const String cefr = 'cefr';           // A1, A2, B1, B2, C1, C2
+static const String topic = 'topic';         // animals, food, travel, etc.
+static const String wordType = 'word_type';  // noun, verb, adjective
+static const String custom = 'custom';       // user-defined
+```
+
+### Languages
+```dart
+static const String german = 'de';
+static const String english = 'en';
+static const String spanish = 'es';
+static const List<String> supported = [german, english, spanish];
 ```
 
 ## Key Design Principles
@@ -276,41 +228,196 @@ Three distinct language concepts:
 - **Repositories**: Data access and queries
 - **Services**: Cross-aggregate operations and business logic
 
-## Core Entities
+## Detailed Entity Descriptions
 
 ### Word
-- Multilingual translations and audio
-- Tagged with CEFR level, topic, word type
-- Can be system-provided or user-created
-- Supports soft delete
+**Purpose**: Core vocabulary entity with multilingual support
+
+**Key Fields**:
+- `translations`: Map of language code to word text
+- `audioUrls`: Map of language code to pronunciation URL
+- `tagIds`: List of tag IDs (e.g., `['cefr:A1', 'topic:animals']`)
+- `creatorId`: null = system word, userId = user-created
+
+**Example**:
+```dart
+Word(
+  id: 'word_001',
+  translations: {'de': 'Hund', 'en': 'dog', 'es': 'perro'},
+  audioUrls: {'de': 'url_to_german_audio'},
+  tagIds: ['cefr:A1', 'topic:animals', 'word_type:noun'],
+  creatorId: null, // system word
+  visibility: WordVisibility.public,
+  deletedAt: null,
+)
+```
 
 ### Tag
-- Category-value structure (e.g., `cefr:A1`)
-- Multilingual display names
-- Immutable ID for referencing
+**Purpose**: Categorization and filtering
+
+**Key Fields**:
+- `id`: Immutable identifier (format: `category:value`)
+- `category`: Group tags (cefr, topic, word_type, custom)
+- `value`: Unique value within category
+- `translations`: Multilingual display names
+
+**Example**:
+```dart
+Tag(
+  id: 'topic:animals',
+  category: 'topic',
+  value: 'animals',
+  translations: {'en': 'Animals', 'de': 'Tiere', 'es': 'Animales'},
+  creatorId: null, // system tag
+)
+```
 
 ### WordPack
-- Tag-based filtering (include/exclude/optional)
-- Multilingual names and descriptions
-- Specifies available play and translation languages
-- Cached word count for performance
+**Purpose**: Filtered collection of words for gameplay
+
+**Key Fields**:
+- `includedTagIds`: Words must have ALL these tags
+- `optionalTagIds`: Words can have ANY of these tags
+- `excludedTagIds`: Words must NOT have these tags
+- `availablePlayLanguages`: Languages the pack supports for gameplay
+- `availableTranslationLanguages`: Languages available for translations
+
+**Example**:
+```dart
+WordPack(
+  id: 'pack_a1_animals',
+  names: {'en': 'Beginner Animals', 'de': 'Tiere für Anfänger'},
+  includedTagIds: ['cefr:A1', 'topic:animals'], // Must have both
+  availablePlayLanguages: ['de', 'es'],
+  availableTranslationLanguages: ['en', 'de'],
+)
+```
 
 ### GameState
-- References words by ID only
-- Efficient WordPlacement (start + direction + length)
-- Full save/resume capability
-- Language-specific configuration
+**Purpose**: Complete state of an active or saved game
+
+**Key Fields**:
+- `wordIds`: References to words (not full objects)
+- `wordPlacements`: Efficient storage (start + direction + length)
+- `playLanguage`: Language of words in grid
+- `translationLanguage`: Language for hints
+
+**Storage Efficiency**:
+- Storing word IDs instead of full objects reduces save file size by ~90%
+- WordPlacement stores 3 values instead of potentially dozens of positions
+
+### WordPlacement
+**Purpose**: Efficiently store word location in grid
+
+**Design**:
+```dart
+WordPlacement(
+  wordId: 'word_001',
+  start: Position(row: 2, col: 3),
+  length: 4,
+  direction: Direction.horizontal,
+)
+```
+
+Positions computed on-demand:
+```dart
+List<Position> getPositions() {
+  // Calculates all positions based on start, direction, length
+  // Not stored - computed when needed
+}
+```
 
 ### LearningList
-- Language-pair specific (German→English separate from Spanish→English)
-- Tracks review history and spaced repetition data
-- Sync-ready with timestamps and tombstones
+**Purpose**: Track words user is learning
+
+**Key Fields**:
+- `primaryLanguage`: Language being learned (e.g., 'de')
+- `translationLanguage`: Reference language (e.g., 'en')
+- `words`: Map of wordId to LearningWord metadata
+
+**Design Note**: Learning lists are language-pair specific. If user learns both German→English and Spanish→English, these are separate lists.
+
+## Data Relationships
+
+### Word → Tag (Many-to-Many)
+- Words store tag IDs in a list
+- Tags exist independently
+- Updating a tag's translation updates all words automatically
+
+### WordPack → Tag (Filter Relationship)
+- WordPacks define tag filters (include/exclude/optional)
+- At runtime, query words matching filter criteria
+- Dynamic: adding words with matching tags automatically includes them
+
+### GameState → Word (Reference)
+- GameState stores only word IDs
+- Full Word objects fetched via WordRepository when needed
+- Allows word updates without breaking saved games
+
+### LearningWord → Word (Reference)
+- LearningWord stores only word ID
+- Metadata (review dates, difficulty) stored separately
+- Same word can be in multiple learning lists (different language pairs)
 
 ## Storage Strategy
 
-All data stored in **Hive** (NoSQL):
-- Type-safe with generated adapters
-- Fast queries for tag-based filtering
-- Works seamlessly with freezed models
-- Cross-platform (Android, iOS, Web)
+**Hive Boxes (NoSQL)**:
+```dart
+Box<Word> wordsBox;
+Box<Tag> tagsBox;
+Box<WordPack> wordPacksBox;
+Box<GameState> gameStatesBox;
+Box<LearningList> learningListBox;
+Box<AppSettings> appSettingsBox;
+```
 
+**Why Hive**:
+- Type-safe with generated adapters
+- Fast tag-based queries
+- Cross-platform (Android, iOS, Web)
+- Works seamlessly with freezed models
+- No SQL schema migrations
+
+## Query Examples
+
+### Find A1 Animal Words
+```dart
+final words = await wordRepository.getByTagIds(['cefr:A1', 'topic:animals']);
+// Returns words that have BOTH tags
+```
+
+### Get Words for Pack
+```dart
+// Pack definition
+final pack = WordPack(
+  includedTagIds: ['cefr:A1', 'topic:animals'],
+  excludedTagIds: ['word_type:verb'],
+);
+
+// Query
+final words = await wordRepository.getByTagIds(pack.includedTagIds);
+final filtered = words.where((w) => 
+  !pack.excludedTagIds.any((excludeId) => w.tagIds.contains(excludeId))
+);
+```
+
+### Load Game with Words
+```dart
+// Load game state
+final gameState = await gameRepository.getById(gameId);
+
+// Fetch full word objects
+final words = await wordRepository.getByIds(gameState.wordIds);
+
+// Now have both game state and word data
+```
+
+## Related Documentation
+
+- [Full Architecture Documentation](../architecture.md)
+- [Data Flow Examples](../data-flow.md)
+- [API Documentation](../api.md)
+
+---
+
+*Last updated: January 2026*
