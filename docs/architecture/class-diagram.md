@@ -1,3 +1,4 @@
+```mermaid
 classDiagram
     %% Core Word System
     class Word {
@@ -225,3 +226,5 @@ classDiagram
     GameSettings --> WordPack : references via wordPackId
     GameState --> AppSettings : respects defaults
     GameState --> Languages : uses codes
+
+```
