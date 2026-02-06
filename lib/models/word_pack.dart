@@ -1,0 +1,3 @@
+class WordPack {
+  const WordPack();
+}

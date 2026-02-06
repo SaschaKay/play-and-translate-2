@@ -11,6 +11,8 @@ Complete technical documentation for the Word Game App.
   - Technical stack and justifications
   - Development phases
   - Implementation guidelines
+- **[Data Flow](data-flow.md)** - High-level request and state flow
+- **[API Reference](api.md)** - Planned repository and service APIs
 
 - **[Class Diagram](architecture/class-diagram.md)** - Visual representation of data models
   - Core entities (Word, Tag, WordPack)

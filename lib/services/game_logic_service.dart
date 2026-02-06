@@ -1,0 +1,3 @@
+class GameLogicService {
+  const GameLogicService();
+}
