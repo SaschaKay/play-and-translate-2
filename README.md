@@ -27,6 +27,8 @@ Complete technical documentation is available in the `docs/` folder:
 - **[Architecture Overview](docs/architecture.md)** - Full product and technical documentation
 - **[Class Diagram](docs/architecture/class-diagram.md)** - Data model and relationships
 - **[Setup Guide](docs/setup.md)** - Development environment setup
+- **[Data Flow](docs/data-flow.md)** - High-level data flow overview
+- **[API Reference](docs/api.md)** - Repository and service APIs
 
 ## 🛠️ Getting Started
 

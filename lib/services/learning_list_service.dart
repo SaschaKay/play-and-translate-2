@@ -1,0 +1,3 @@
+class LearningListService {
+  const LearningListService();
+}

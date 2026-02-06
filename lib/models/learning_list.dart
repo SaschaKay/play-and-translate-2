@@ -1,0 +1,3 @@
+class LearningList {
+  const LearningList();
+}

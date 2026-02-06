@@ -1,0 +1,3 @@
+class Word {
+  const Word();
+}
